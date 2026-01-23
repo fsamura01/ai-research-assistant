@@ -121,7 +121,7 @@ pip install youtube-transcript-api
 - [ ] Create `.env` file for API keys
 - [ ] Test OpenAI API connection
 
-**Deliverable:** Working Jupyter notebook that calls OpenAI API
+**Deliverable:** Working Jupyter notebook that calls OpenAI API or Google API
 
 ---
 

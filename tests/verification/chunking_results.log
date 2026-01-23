@@ -1,0 +1,21 @@
+--- Intelligent Chunking Verification ---
+Intelligent Chunking Enabled: True
+Model: llama-3.1-8b-instant
+
+Adding document with intelligent chunking...
+
+Created 3 chunks.
+
+Chunks retrieved:
+
+--- Chunk 1 ---
+Artificial Intelligence (AI) is intelligence demonstrated by machines, as opposed to the natural intelligence displayed by animals including humans. 
+AI research has been defined as the field of study of intelligent agents, which refers to any system that perceives its environment and takes actions that maximize its chance of achieving its goals.
+
+--- Chunk 2 ---
+Machine learning (ML) is a field of inquiry devoted to understanding and building methods that 'learn', that is, methods that leverage data to improve performance on some set of tasks. 
+It is seen as a part of artificial intelligence. Machine learning algorithms build a model based on sample data, known as training data, in order to make predictions or decisions without being explicitly programmed to do so.
+
+--- Chunk 3 ---
+Deep learning is part of a broader family of machine learning methods based on artificial neural networks with representation learning. 
+Learning can be supervised, semi-supervised or unsupervised.
