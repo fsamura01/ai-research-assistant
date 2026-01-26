@@ -17,6 +17,7 @@ class Config:
     
     # LLM Provider (groq or openai)
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
+    print(f"LLM_PROVIDER: {LLM_PROVIDER}")
     
     # Groq Settings
     GROQ_MODEL = "llama-3.3-70b-versatile"  # Fast and capable
@@ -25,6 +26,7 @@ class Config:
 
     # Embedding Settings
     # Options: "local" (free), "openai" (premium)
+    # If using openai, make sure to set OPENAI_API_KEY in .env file as well as EMBEDDING_PROVIDER = "openai"
     EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")
     print(f"EMBEDDING_PROVIDER: {EMBEDDING_PROVIDER}")
   
@@ -51,7 +53,11 @@ class Config:
     CHUNK_SIZE = 800
     CHUNK_OVERLAP = 200
     TOP_K_RESULTS = 5
+    # if USE_INTELLIGENT_CHUNKING is True, make sure to set CHUNKING_LLM_MODEL in .env file as well
     USE_INTELLIGENT_CHUNKING = os.getenv("USE_INTELLIGENT_CHUNKING", "False").lower() == "true"
+
+
+    print(f"USE_INTELLIGENT_CHUNKING: {USE_INTELLIGENT_CHUNKING}")
     
     COLLECTION_NAME = "research_documents"
     

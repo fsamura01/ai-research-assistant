@@ -17,6 +17,10 @@ Responsible for extracting raw text and structured metadata from diverse sources
 - **YouTube Transcripts:** 
   - Fetches transcripts using `youtube-transcript-api`.
   - Automatically stitches snippets into a coherent text body.
+- **GitHub Ingestion (NEW):**
+  - Downloads public repositories via the Codeload API.
+  - Automatically parses and indexes all `.md` and `.mdx` files.
+  - extracts and preserves **Frontmatter** metadata (title, tags, etc.).
 
 ### Metadata Schema:
 Every document extracted contains:

@@ -6,6 +6,10 @@ import requests
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
+import zipfile
+import io
+import frontmatter
+import os
 
 class Document:
     """Represents a document with content and metadata"""
@@ -108,6 +112,64 @@ class DocumentLoader:
             )
         except Exception as e:
             raise ValueError(f"Failed to load YouTube transcript: {str(e)}")
+    
+    @staticmethod
+    def load_github_repo(repo_owner: str, repo_name: str, branch: str = 'main') -> List[Document]:
+        """
+        Download and parse markdown files from a GitHub repository.
+        """
+        prefix = 'https://codeload.github.com' 
+        url = f'{prefix}/{repo_owner}/{repo_name}/zip/refs/heads/{branch}'
+        
+        try:
+            response = requests.get(url, timeout=20)
+            response.raise_for_status()
+            
+            repo_docs = []
+            zf = zipfile.ZipFile(io.BytesIO(response.content))
+            
+            for file_info in zf.infolist():
+                filename = file_info.filename
+                filename_lower = filename.lower()
+                
+                # Only process markdown files
+                if not (filename_lower.endswith('.md') or filename_lower.endswith('.mdx')):
+                    continue
+                
+                try:
+                    with zf.open(file_info) as f_in:
+                        content = f_in.read().decode('utf-8', errors='ignore')
+                        
+                        # Parse frontmatter if present
+                        post = frontmatter.loads(content)
+                        text_content = post.content
+                        metadata = post.to_dict()
+                        
+                        # Remove content from metadata to avoid duplication
+                        if 'content' in metadata:
+                            del metadata['content']
+                            
+                        # Add standard metadata
+                        metadata.update({
+                            "source_type": "github",
+                            "repo": f"{repo_owner}/{repo_name}",
+                            "filename": filename,
+                            "source_url": f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{filename.split('/', 1)[-1]}"
+                        })
+                        
+                        if text_content.strip():
+                            repo_docs.append(Document(content=text_content, metadata=metadata))
+                            
+                except Exception as e:
+                    print(f"      [WARNING] Skipping {filename}: {e}")
+                    continue
+            
+            zf.close()
+            print(f"   ✅ Loaded {len(repo_docs)} markdown files from GitHub: {repo_owner}/{repo_name}")
+            return repo_docs
+            
+        except Exception as e:
+            raise ValueError(f"Failed to download GitHub repository {repo_owner}/{repo_name}: {str(e)}")
 
 
 # Example usage

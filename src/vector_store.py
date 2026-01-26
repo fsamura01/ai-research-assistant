@@ -164,10 +164,10 @@ class VectorStore:
         for doc in tqdm(documents):
             # Choose chunking method
             if Config.USE_INTELLIGENT_CHUNKING:
-                tqdm.write(f"   [AI Research Assistant] Using intelligent chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
+                #tqdm.write(f"   [AI Research Assistant] Using intelligent chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
                 chunks = self._intelligent_chunk_text(doc.content)
             else:
-                tqdm.write(f"   [AI Research Assistant] Using sliding window chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
+                #tqdm.write(f"   [AI Research Assistant] Using sliding window chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
                 chunks = self._chunk_text(doc.content)
             
             for chunk_idx, chunk in enumerate(chunks):
@@ -216,7 +216,6 @@ class VectorStore:
         # Generate query embedding
         query_embedding = self._get_embedding(query)
         
-        # Search
         # Search using the modern 'query_points' API
         results = self.qdrant_client.query_points(
             collection_name=self.collection_name,
