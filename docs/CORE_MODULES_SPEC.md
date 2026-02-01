@@ -70,5 +70,27 @@ Tools to ensure the system is working correctly.
 
 ---
 
-## 🚀 Upcoming Focus
-- **Week 2:** Introduction of Agentic Function Calling & Research Tools.
+## 🤖 5. Agentic Framework (`projects/week2_agent_mechanics/`)
+The brain of the assistant that orchestrates tools and follows the ReAct pattern.
+
+### Agent Logic:
+- **Manual Agent (`manual_agent.py`):** 
+  - Implements a full **Internal Control Loop**.
+  - Automatically detects tool calls from the LLM, executes them, and returns results without user intervention.
+  - Supports "wrapping" of raw tools into Groq/OpenAI compatible JSON schemas.
+- **Advanced Agent (`advanced_pydantic_ai.py`):**
+  - Powered by **PydanticAI**.
+  - **Type Validation:** Uses Pydantic models for tool arguments to prevent hallucinated inputs.
+  - **Structured Data:** Tools return complex objects (e.g., `SearchResult`) instead of strings.
+  - **Dependency Injection:** Uses `RunContext` to safely pass API keys and clients into tools.
+
+### Verification Tools:
+- **Mock Testing (`test_pydantic_agent.py`):**
+  - Uses PydanticAI's `TestModel` to simulate LLM behavior for fast, free testing.
+  - Unit tests for individual tool logic and schema validation.
+
+---
+
+## 🚀 6. Upcoming Focus
+- **Week 3:** Integration of live Research Tools (Tavily, Vector Search, YouTube).
+- **Week 4:** Evaluation and LLM Judges for quality control.

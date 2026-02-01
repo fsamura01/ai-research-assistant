@@ -112,3 +112,95 @@ pydantic_ai_agent.py
 - Type validation for tool arguments.
 - Handling complex tool outputs.
 - Testing and debugging agentic flows.
+
+**Implementation Plan: Advanced PydanticAI Features**
+This phase focuses on leveraging the full power of PydanticAI for robust agent development, specifically focusing on type safety, structured data, and testability.
+
+**Goal**
+Build a "Research Assistant" that uses PydanticAI to search for information, process complex data, and demonstrate robust error handling and testing.
+
+**Proposed Changes**
+
+**[Component Name] Advanced Agent Implementation**
+We will create a new script that showcases advanced features.
+
+**[NEW] advanced_pydantic_ai.py**
+This script will implement:
+
+Type Validation: Use Pydantic models for tool arguments to ensure the LLM sends valid data.
+Complex Outputs: Tools that return structured objects (e.g., a "Search Result" with snippets and URLs) rather than just strings.
+Dependencies: Use PydanticAI's Deps to inject shared state or clients (like a search client).
+
+**[Component Name] Testing and Debugging**
+Create a dedicated test file to demonstrate how to verify agent behavior.
+
+**[NEW] test_pydantic_agent.py**
+Unit Testing Tools: Testing individual tool functions.
+Agent Testing: Mocking the LLM and asserting that the agent calls the correct tools in response to specific queries.
+Logfire Integration: Show how to use Logfire for debugging flows.
+
+**Verification Plan**
+
+**Automated Tests**
+Run pytest projects/week2_agent_mechanics/test_pydantic_agent.py.
+Verify that tool validation fails correctly when passed bad data.
+
+**Manual Verification**
+Run the advanced script and inspect the structured output.
+Check Logfire logs (if applicable) to see the execution trace.
+
+**Week 2 Walkthrough: Agent Mechanics & Deep Dive into PydanticAI**
+We've completed the transition from a manual "from scratch" agent to a high-powered, type-safe agent using PydanticAI.
+
+**Phase 1: The Manual Foundation**
+We built a manual agent to understand the ReAct (Thought, Action, Observation) loop.
+
+Tools: Plain Python functions.
+Parsing: Manual regex to find Action: tool_name(args).
+Memory: A self.messages list maintained manually.
+
+**Phase 2: Advanced PydanticAI Features**
+We implemented a ResearchAssistant that showcases industrial-grade agent design.
+
+**1. Type Validation**
+We used Pydantic models to define exactly what the LLM is allowed to send.
+
+class SearchQuery(BaseModel):
+    query: str
+    max_results: int = Field(default=3, ge=1, le=5) # Hard limits!
+
+**IMPORTANT**
+
+This prevents "hallucinated" arguments or out-of-bounds numbers from breaking your system.
+
+**2. Structured Tool Outputs**
+Our tools now return complex objects (
+SearchResult
+), which PydanticAI automatically serializes for the LLM.
+
+Benefit: The LLM gets clear, structured data (Title, URL, Snippet) rather than just a messy string.
+
+**3. Automated Testing**
+We implemented a full test suite in 
+test_pydantic_agent.py
+:
+
+Unit Tests: Verifying individual tool logic.
+Agent Testing: Using TestModel() to simulate LLM responses without spending money on API calls.
+Verification Results
+We ran the test suite across the new components:
+
+uv run python projects/week2_agent_mechanics/test_pydantic_agent.py
+Output:
+
+test_perform_search_tool
+: Passed ✅
+test_search_query_validation
+: Passed ✅
+test_agent_logic
+: Passed ✅
+
+**Key Learnings**
+Abstraction: Frameworks like PydanticAI replace complex regex and manual loops with clean decorators and types.
+Reliability: Type validation makes agents significantly more stable in production.
+Testability: Using TestModel allows for deterministic testing of complex agentic flows.
