@@ -3,7 +3,7 @@ import os
 
 # Adds the project root to the python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from src.document_loader import DocumentLoader, Document
+from src.utils.document_loader import DocumentLoader, Document
 
 def verify_document_loader():
     print(f"--- DocumentLoader Verification ---")

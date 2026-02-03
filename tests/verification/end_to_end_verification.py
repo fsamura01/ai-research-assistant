@@ -4,8 +4,8 @@ import os
 # Adds the project root to the python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.vector_store import VectorStore
-from src.document_loader import DocumentLoader, Document 
+from src.utils.vector_store import VectorStore
+from src.utils.document_loader import DocumentLoader, Document 
 from src.utils.config import Config
 
 def end_to_end_verification():

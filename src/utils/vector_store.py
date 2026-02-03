@@ -9,7 +9,7 @@ from groq import Groq
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from src.utils.config import Config
-from src.document_loader import Document
+from src.utils.document_loader import Document
 import hashlib
 import uuid
 from tqdm.auto import tqdm

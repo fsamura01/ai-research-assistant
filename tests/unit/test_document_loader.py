@@ -5,7 +5,7 @@ import unittest
 # Adds the project root to the python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.document_loader import Document, DocumentLoader
+from src.utils.document_loader import Document, DocumentLoader
 
 class TestDocumentLoader(unittest.TestCase):
     def setUp(self):

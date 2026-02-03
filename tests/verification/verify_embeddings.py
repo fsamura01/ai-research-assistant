@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.vector_store import VectorStore
+from src.utils.vector_store import VectorStore
 from src.utils.config import Config
 import os
 

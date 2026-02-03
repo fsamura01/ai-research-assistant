@@ -4,7 +4,7 @@ This document provides a technical reference for the foundational modules of the
 
 ---
 
-## 📂 1. Document Loader (`src/document_loader.py`)
+## 📂 1. Document Loader (`src/utils/document_loader.py`)
 Responsible for extracting raw text and structured metadata from diverse sources.
 
 ### Capabilities:
@@ -30,7 +30,7 @@ Every document extracted contains:
 
 ---
 
-## 🧠 2. Vector Store (`src/vector_store.py`)
+## 🧠 2. Vector Store (`src/utils/vector_store.py`)
 Manages the "long-term memory" of the assistant using **Qdrant**.
 
 ### Core Engine:
@@ -70,34 +70,34 @@ Tools to ensure the system is working correctly.
 
 ---
 
-## 🤖 5. Agentic Framework (`projects/week2_agent_mechanics/`)
+## 🤖 5. Agentic Framework (`src/agents/research_agent.py`)
 The brain of the assistant that orchestrates tools and follows the ReAct pattern.
 
 ### Agent Logic:
-- **Manual Agent (`manual_agent.py`):** 
-  - Implements a full **Internal Control Loop**.
-  - Automatically detects tool calls from the LLM, executes them, and returns results without user intervention.
-- **Advanced Agent (`advanced_pydantic_ai.py`):**
+- **Main Agent (`src/agents/research_agent.py`):**
   - Powered by **PydanticAI**.
   - **Type Validation:** Uses Pydantic models for tool arguments.
   - **Structured Data:** Tools return complex objects (e.g., `SearchResult`).
   - **Dependency Injection:** Uses `RunContext` for API keys and store clients.
+  - **Modular Tools:** Each tool extracted to `src/tools/` for better maintainability.
 
 ---
 
-## 🛠️ 6. Research Tools (Agentic Capabilities)
+## 🛠️ 6. Research Tools (`src/tools/`)
 Live tools that provide the agent with external information.
 
 ### Tools:
-- **Vector Search (`search_documents`):**
+- **Vector Search (`src/tools/research_local_docs.py`):**
   - Connects to the **Qdrant Vector Store**.
   - Performs semantic search across all indexed PDFs, web pages, and GitHub repos.
-- **Web Search (`web_search`):**
+- **Web Search (`src/tools/perform_web_search.py`):**
   - Uses the **Tavily API**.
   - Provides real-time news, current events, and general internet browsing capabilities.
-- **YouTube Transcripts (`get_youtube_transcript`):**
+- **YouTube Transcripts (`src/tools/get_youtube_transcript.py`):**
   - Uses `youtube-transcript-api`.
   - Extracts and summarizes contents from provided video URLs.
+- **Save Note (`src/tools/save_note.py`):**
+  - Saves research findings to the `research_notes/` directory.
 
 ---
 

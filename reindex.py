@@ -1,5 +1,5 @@
-from src.vector_store import VectorStore
-from src.document_loader import DocumentLoader, Document
+from src.utils.vector_store import VectorStore
+from src.utils.document_loader import DocumentLoader, Document
 from src.utils.config import Config
 import os
 from typing import List, Dict
