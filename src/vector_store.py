@@ -8,10 +8,10 @@ from qdrant_client.models import Distance, VectorParams, PointStruct
 from groq import Groq
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
-import os
 from src.utils.config import Config
 from src.document_loader import Document
 import hashlib
+import uuid
 from tqdm.auto import tqdm
 
 
@@ -61,20 +61,28 @@ class VectorStore:
                     distance=Distance.COSINE
                 )
             )
+            print(f"Created new collection '{self.collection_name}'")
+        else:
+            count = self.qdrant_client.count(self.collection_name).count
+            print(f"Loaded existing collection '{self.collection_name}' with {count} documents.")
             print(f"[OK] Created collection: {self.collection_name}")
     
     def _get_embedding(self, text: str) -> List[float]:
-        """Generate embedding for text based on provider"""
+        """Generate embedding for a single text."""
+        return self._get_embeddings([text])[0]
+
+    def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings for a list of texts in a single batch for performance."""
         if Config.EMBEDDING_PROVIDER == "openai":
             response = self.openai_client.embeddings.create(
                 model=Config.EMBEDDING_MODEL,
-                input=text
+                input=texts
             )
-            return response.data[0].embedding
+            return [r.embedding for r in response.data]
         else:
-            # Local embedding
-            embedding = self.local_model.encode(text)
-            return embedding.tolist()
+            # Local embedding - SentenceTransformers is optimized for lists
+            embeddings = self.local_model.encode(texts, batch_size=32, show_progress_bar=False)
+            return embeddings.tolist()
     
     def _chunk_text(self, text: str, chunk_size: int = None, overlap: int = None) -> List[str]:
         """Split text into chunks"""
@@ -151,58 +159,108 @@ class VectorStore:
         # Fallback to standard chunking
         return self._chunk_text(text)
 
+    def _sanitize_metadata(self, metadata: Dict) -> Dict:
+        """
+        Ensures metadata contains only Qdrant-friendly types (str, int, float, bool, list).
+        Uses JSON serialization as a forced bottleneck to break circular references 
+        and flatten complex structures.
+        """
+        import json
+        try:
+            # Force a round-trip to JSON to flatten everything to basic types
+            # and break any circular references or custom objects
+            clean_json = json.dumps(metadata, default=str)
+            sanitized = json.loads(clean_json)
+            return sanitized
+        except Exception as e:
+            print(f"   [WARNING] Metadata sanitization issue: {e}. Using emergency stringify.")
+            return {str(k): str(v) for k, v in metadata.items()}
+
     def add_documents(self, documents: List[Document]) -> int:
         """
-        Add documents to vector store
-        
-        Returns:
-            Number of chunks added
+        Add documents to vector store with batched embeddings, batch upserts, and metadata sanitization.
         """
-        points = []
-        point_id = 0
+        all_chunks_data = [] # List of tuples: (text, metadata, point_id)
         
-        for doc in tqdm(documents):
-            # Choose chunking method
+        # 1. Collect all chunks and prepare metadata
+        for doc in tqdm(documents, desc="📂 Chunking Documents"):
             if Config.USE_INTELLIGENT_CHUNKING:
-                #tqdm.write(f"   [AI Research Assistant] Using intelligent chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
                 chunks = self._intelligent_chunk_text(doc.content)
             else:
-                #tqdm.write(f"   [AI Research Assistant] Using sliding window chunking for document: {Config.USE_INTELLIGENT_CHUNKING}")
                 chunks = self._chunk_text(doc.content)
             
+            sanitized_meta = self._sanitize_metadata(doc.metadata)
+            
             for chunk_idx, chunk in enumerate(chunks):
-                # Generate embedding
-                embedding = self._get_embedding(chunk)
-                
-                # Create unique ID for chunk
-                chunk_hash = hashlib.md5(chunk.encode()).hexdigest()[:8]
+                # Create unique UUID for point
+                point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{doc.content[:100]}_{chunk_idx}_{chunk[:50]}"))
                 
                 # Prepare metadata
                 payload = {
                     "text": chunk,
                     "chunk_index": chunk_idx,
                     "total_chunks": len(chunks),
-                    **doc.metadata,
-                    "chunk_id": f"{doc.metadata.get('source_type', 'unknown')}_{chunk_hash}"
+                    **sanitized_meta
                 }
-                
-                # Create point
-                point = PointStruct(
-                    id=point_id,
-                    vector=embedding,
-                    payload=payload
-                )
-                points.append(point)
-                point_id += 1
+                all_chunks_data.append({
+                    "text": chunk,
+                    "payload": payload,
+                    "id": point_id
+                })
+
+        if not all_chunks_data:
+            return 0
+
+        # 2. Generate embeddings in large batches (optimized for Speed)
+        texts_to_embed = [item["text"] for item in all_chunks_data]
+        print(f"🧠 Generating embeddings for {len(texts_to_embed)} chunks...")
+        all_embeddings = self._get_embeddings(texts_to_embed)
+
+        # 3. Create Points
+        all_points = []
+        for i, item in enumerate(all_chunks_data):
+            point = PointStruct(
+                id=item["id"],
+                vector=all_embeddings[i],
+                payload=item["payload"]
+            )
+            all_points.append(point)
+
+        # 4. Upload to Qdrant in batches (optimized for Stability)
+        batch_size = 50 # Even smaller batches for diagnostic safety
+        total_added = 0
+        import traceback
         
-        # Upload to Qdrant
-        self.qdrant_client.upsert(
-            collection_name=self.collection_name,
-            points=points
-        )
+        try:
+            for i in range(0, len(all_points), batch_size):
+                batch = all_points[i : i + batch_size]
+                try:
+                    self.qdrant_client.upsert(
+                        collection_name=self.collection_name,
+                        points=batch
+                    )
+                    total_added += len(batch)
+                except RecursionError:
+                    print(f"\n❌ [CRITICAL] RecursionError detected in batch starting at {i}!")
+                    # In case of recursion error, try to identify the offending point
+                    for p in batch:
+                        try:
+                            import pickle
+                            pickle.dumps(p)
+                        except RecursionError:
+                            print(f"   Found problematic point ID: {p.id}")
+                            print(f"   Metadata keys: {list(p.payload.keys())}")
+                            # Skip this point and continue
+                            continue
+                except Exception as e:
+                    print(f"   [Batch Error] {e}")
+                    continue
+        except Exception as e:
+            print(f"   [Ingestion Failed] {e}")
+            traceback.print_exc()
         
-        print(f"[OK] Added {len(points)} chunks from {len(documents)} documents")
-        return len(points)
+        print(f"[OK] Successfully indexed {total_added} chunks across {len(documents)} documents.")
+        return total_added
     
     def search(self, query: str, top_k: int = None) -> List[Dict]:
         """

@@ -77,20 +77,40 @@ The brain of the assistant that orchestrates tools and follows the ReAct pattern
 - **Manual Agent (`manual_agent.py`):** 
   - Implements a full **Internal Control Loop**.
   - Automatically detects tool calls from the LLM, executes them, and returns results without user intervention.
-  - Supports "wrapping" of raw tools into Groq/OpenAI compatible JSON schemas.
 - **Advanced Agent (`advanced_pydantic_ai.py`):**
   - Powered by **PydanticAI**.
-  - **Type Validation:** Uses Pydantic models for tool arguments to prevent hallucinated inputs.
-  - **Structured Data:** Tools return complex objects (e.g., `SearchResult`) instead of strings.
-  - **Dependency Injection:** Uses `RunContext` to safely pass API keys and clients into tools.
-
-### Verification Tools:
-- **Mock Testing (`test_pydantic_agent.py`):**
-  - Uses PydanticAI's `TestModel` to simulate LLM behavior for fast, free testing.
-  - Unit tests for individual tool logic and schema validation.
+  - **Type Validation:** Uses Pydantic models for tool arguments.
+  - **Structured Data:** Tools return complex objects (e.g., `SearchResult`).
+  - **Dependency Injection:** Uses `RunContext` for API keys and store clients.
 
 ---
 
-## 🚀 6. Upcoming Focus
-- **Week 3:** Integration of live Research Tools (Tavily, Vector Search, YouTube).
-- **Week 4:** Evaluation and LLM Judges for quality control.
+## 🛠️ 6. Research Tools (Agentic Capabilities)
+Live tools that provide the agent with external information.
+
+### Tools:
+- **Vector Search (`search_documents`):**
+  - Connects to the **Qdrant Vector Store**.
+  - Performs semantic search across all indexed PDFs, web pages, and GitHub repos.
+- **Web Search (`web_search`):**
+  - Uses the **Tavily API**.
+  - Provides real-time news, current events, and general internet browsing capabilities.
+- **YouTube Transcripts (`get_youtube_transcript`):**
+  - Uses `youtube-transcript-api`.
+  - Extracts and summarizes contents from provided video URLs.
+
+---
+
+## 📓 7. Note Management & Persistence
+Allows the agent to save findings and generate reports.
+
+### Features:
+- **Local Storage (`save_note`):**
+  - Saves research findings to the `research_notes/` directory.
+  - Formats content as structured **Markdown** files with auto-generated titles.
+
+---
+
+## 🚀 8. Upcoming Focus
+- **Week 3:** Evaluation, Benchmarking, and Monitoring with **Logfire**.
+- **Week 4:** UI development and deployment.
