@@ -13,9 +13,12 @@ from src.utils.document_loader import Document
 import hashlib
 import uuid
 from tqdm.auto import tqdm
+import logfire
+
+logfire.configure(send_to_logfire='if-token-present')
 
 
-    
+
 class VectorStore:
     """Manages vector storage and retrieval using Qdrant"""
     
@@ -176,6 +179,7 @@ class VectorStore:
             print(f"   [WARNING] Metadata sanitization issue: {e}. Using emergency stringify.")
             return {str(k): str(v) for k, v in metadata.items()}
 
+    @logfire.instrument("add_documents", extract_args=True)
     def add_documents(self, documents: List[Document]) -> int:
         """
         Add documents to vector store with batched embeddings, batch upserts, and metadata sanitization.
@@ -262,6 +266,7 @@ class VectorStore:
         print(f"[OK] Successfully indexed {total_added} chunks across {len(documents)} documents.")
         return total_added
     
+    @logfire.instrument("vector_search", extract_args=True)
     def search(self, query: str, top_k: int = None) -> List[Dict]:
         """
         Search for relevant documents

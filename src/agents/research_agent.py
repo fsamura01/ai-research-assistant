@@ -15,7 +15,8 @@ from src.tools.perform_web_search import perform_web_search
 from src.tools.get_youtube_transcript import get_youtube_transcript
 
 load_dotenv()
-logfire.configure(send_to_logfire='never')
+logfire.configure(send_to_logfire='if-token-present')
+logfire.instrument_pydantic() # Instrument Pydantic models (including PydanticAI agents)
 
 # Initialize Model
 model = GroqModel('llama-3.3-70b-versatile')

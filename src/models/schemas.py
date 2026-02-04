@@ -26,9 +26,9 @@ class SearchResult(BaseModel):
 
 class ResearchDeps:
     """Dependencies for the research agent."""
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, vector_store: VectorStore = None):
         self.api_key = api_key
-        # Initialize the real vector store (persistent mode to read Week 1 data)
-        self.vector_store = VectorStore(in_memory=False)
+        # Initialize or use provided vector store
+        self.vector_store = vector_store or VectorStore(in_memory=False)
         # Initialize Tavily client for live web search
         self.tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
