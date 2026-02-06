@@ -26,13 +26,22 @@ class DocumentLoader:
     """Load documents from various sources"""
     
     @staticmethod
-    def load_pdf(file_path: str) -> List[Document]:
-        """Load and parse PDF file"""
+    def load_pdf(file_path_or_obj) -> List[Document]:
+        """Load and parse PDF file (accepts path string or file-like object)"""
         documents = []
-        path = Path(file_path)
         
-        with open(path, 'rb') as file:
-            pdf_reader = pypdf.PdfReader(file)
+        # Determine source name for metadata
+        if isinstance(file_path_or_obj, (str, Path)):
+            path = Path(file_path_or_obj)
+            source_name = str(path)
+            file_context = open(path, 'rb')
+        else:
+            # Assume file-like object (e.g. Streamlit UploadedFile)
+            source_name = getattr(file_path_or_obj, 'name', 'uploaded_file.pdf')
+            file_context = file_path_or_obj
+
+        try:
+            pdf_reader = pypdf.PdfReader(file_context)
             
             for page_num, page in enumerate(pdf_reader.pages):
                 text = page.extract_text()
@@ -42,12 +51,16 @@ class DocumentLoader:
                         content=text,
                         metadata={
                             "source_type": "pdf",
-                            "source_path": str(path),
+                            "source_path": source_name,
                             "page_number": page_num + 1,
                             "total_pages": len(pdf_reader.pages)
                         }
                     )
                     documents.append(doc)
+        finally:
+            # Only close if we opened it ourselves
+            if isinstance(file_path_or_obj, (str, Path)):
+                file_context.close()
         
         return documents
     

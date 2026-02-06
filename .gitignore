@@ -16,6 +16,8 @@ wheels/
 
 # Data files
 data/
+qdrant_data/
+research_notes/
 *.db
 .DS_Store
 logs/

@@ -132,9 +132,9 @@ MY_TOPIC = "Docker Fundamentals"
 
 SOURCES = {
     "pdfs": ["data/docker_cheatsheet.pdf"],
-    "webs": ["https://docs.docker.com/get-started/overview/"],
-    "youtubes": ["https://www.youtube.com/watch?v=fqMOX6JJhGo"],
-    "githubs": ["docker/cli/master"], 
+    #"webs": ["https://docs.docker.com/get-started/overview/"],
+    #"youtubes": ["https://www.youtube.com/watch?v=fqMOX6JJhGo"],
+    #"githubs": ["docker/cli/master"], 
 }
 
 if __name__ == "__main__":

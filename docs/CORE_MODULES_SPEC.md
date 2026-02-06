@@ -111,6 +111,36 @@ Allows the agent to save findings and generate reports.
 
 ---
 
-## 🚀 8. Upcoming Focus
-- **Week 3:** Evaluation, Benchmarking, and Monitoring with **Logfire**.
-- **Week 4:** UI development and deployment.
+## 📊 8. Evaluation & Benchmarking (Week 3)
+Systematic measurement of agent performance and response quality.
+
+### Components:
+- **Test Data Generation (`src/evaluation/generate_eval_data.py`):**
+  - Uses **Groq (Llama 3.1)** to generate synthetic Question-Answer-Context (QAC) triplets from indexed documents.
+- **Benchmarking Engine (`src/evaluation/run_benchmark.py`):**
+  - Runs the agent against the synthetic dataset.
+  - Measures latency and success rate.
+- **LLM Judges:**
+  - Uses G-Eval patterns to grade responses on Accuracy, Citations, and Completeness.
+- **Observability with Logfire:**
+  - Integrated into the agent pipeline for real-time tracing of tool calls and LLM prompts.
+
+---
+
+## 📈 9. Monitoring & Dashboard (Week 4)
+Operational oversight and cost tracking via Streamlit.
+
+### Features:
+- **`AgentLogger` (`src/utils/agent_logger.py`):**
+  - SQLite database for persistent storage of interaction history.
+  - Automatically calculates estimated token costs based on Llama 3 rates.
+- **Monitoring Tab (`projects/week4_monitoring_ui/app.py`):**
+  - Summary metrics (Total queries, accuracy, average latency).
+  - Cost analysis charts and latency trend visualizations.
+  - Searchable interaction logs with tool call details.
+
+---
+
+## 🚀 10. Upcoming Focus
+- **Final Polish:** UI refinements and final system integration.
+- **Deployment:** Packaging for deployment.

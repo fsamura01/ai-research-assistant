@@ -1,7 +1,7 @@
 """Vector store implementation using Qdrant"""
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from typing import List, Dict, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
@@ -9,7 +9,7 @@ from groq import Groq
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from src.utils.config import Config
-from src.utils.document_loader import Document
+from src.utils.document_loader import Document, DocumentLoader
 import hashlib
 import uuid
 from tqdm.auto import tqdm
@@ -64,7 +64,9 @@ class VectorStore:
                     distance=Distance.COSINE
                 )
             )
-            print(f"Created new collection '{self.collection_name}'")
+            print(f"[OK] Created collection: {self.collection_name}")
+            count = self.qdrant_client.count(self.collection_name).count
+            print(f"Created new collection'{self.collection_name}' with {count} documents.")
         else:
             count = self.qdrant_client.count(self.collection_name).count
             print(f"Loaded existing collection '{self.collection_name}' with {count} documents.")
@@ -84,7 +86,7 @@ class VectorStore:
             return [r.embedding for r in response.data]
         else:
             # Local embedding - SentenceTransformers is optimized for lists
-            embeddings = self.local_model.encode(texts, batch_size=32, show_progress_bar=False)
+            embeddings = self.local_model.encode(texts, batch_size=32, show_progress_bar=True)
             return embeddings.tolist()
     
     def _chunk_text(self, text: str, chunk_size: int = None, overlap: int = None) -> List[str]:
@@ -303,10 +305,47 @@ class VectorStore:
         self._initialize_collection()
         print(f"[OK] Cleared collection: {self.collection_name}")
 
+    def get_all_sources(self) -> List[Dict]:
+        """
+        Retrieve a list of unique sources currently in the collection.
+        Returns:
+            List of dicts with 'source_type' and 'source_name/url'
+        """
+        try:
+            # We can use the 'scroll' API to get all points (up to a limit)
+            # and then extract unique source info from payloads.
+            # For a production app with many points, we might want a different approach,
+            # but for this scale, scrolling is fine.
+            results, _ = self.qdrant_client.scroll(
+                collection_name=self.collection_name,
+                limit=1000,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            sources = {}
+            for point in results:
+                payload = point.payload
+                s_type = payload.get("source_type")
+                s_name = payload.get("source_path") or payload.get("source_url") or payload.get("repo")
+                
+                if s_type and s_name:
+                    key = f"{s_type}:{s_name}"
+                    if key not in sources:
+                        sources[key] = {
+                            "source_type": s_type,
+                            "source_name": s_name
+                        }
+            
+            return list(sources.values())
+        except Exception as e:
+            print(f"Error fetching sources: {e}")
+            return []
+
 
 # Example usage
 if __name__ == "__main__":
-    from src.document_loader import DocumentLoader
+    from src.utils.document_loader import DocumentLoader
     
     
     # Initialize

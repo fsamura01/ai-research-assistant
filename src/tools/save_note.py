@@ -7,10 +7,13 @@ from src.models.schemas import ResearchDeps
 def save_note(ctx: RunContext[ResearchDeps], title: str, content: str) -> str:
     """Save a research note or summary to a local markdown file.
     
+    IMPORTANT: The 'content' field must contain the ACTUAL research findings, facts, 
+    and analysis. NEVER use placeholders or descriptions of what WILL be searched.
+    
     Args:
         ctx: Run context.
         title: The title of the note (will be used as filename).
-        content: The actual markdown content to save.
+        content: The actual markdown content to save (must be the final results).
     """
     print(f"  [Note Tool] Saving note: {title}")
     
