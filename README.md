@@ -1,36 +1,40 @@
-# AI Research Assistant
+# 🔍 AI Research Assistant
 
-A multi-source RAG-based research assistant built with Python and OpenAI/Groq.
+A multi-source RAG-based research assistant built with Python, PydanticAI, and Qdrant.
 
-## Setup
-1. Create virtual environment: `python -m venv venv`
-2. Activate: `source venv/bin/activate` (Mac/Linux) or `.\.venv\Scripts\activate.ps1` (Windows-PowerShell)
-3. Install dependencies: `uv sync` (or `pip install -r requirements.txt`)
-4. Copy `.env.example` to `.env` and add your API keys (GROQ_API_KEY, TAVILY_API_KEY)
+## 🚀 Quick Start (Docker - Recommended)
 
-## Project Progress
+The easiest way to run the assistant is using Docker Compose:
 
-### 🏗️ Day 3-4: Simple RAG Pipeline
-- [x] **PDF Loader:** Integrated `pypdf` to extract text from multi-page documents.
-- [x] **Vector Store:** Configured **Qdrant** (local mode) for fast similarity search.
-- [x] **Embeddings:** Switched to high-quality local embeddings (`multi-qa-distilbert-cos-v1`) optimized for QA.
-- [x] **Retrieval:** Implemented basic semantic search with score-based filtering.
+1. **Configure Keys:** `cp .env.example .env` and add your `GROQ_API_KEY` and `TAVILY_API_KEY`.
+2. **Launch:** `docker-compose up -d --build`
+3. **Explore:** Open [http://localhost:8501](http://localhost:8501)
 
-### 🌐 Day 5-6: Multi-Source RAG
-- [x] **Web Scraping:** Added `BeautifulSoup4` support for indexing websites (with Wikipedia bypass).
-- [x] **YouTube Transcripts:** Integrated `youtube-transcript-api` to pull text from videos.
-- [x] **Metadata Tracking:** Each chunk now tracks its source URL, filename, and **page number**.
-- [x] **Intelligent Chunking:** Added LLM-powered semantic chunking via Groq (Llama 3.1) for logically coherent sections.
-- [x] **Citation System:** Search results now include clear source attribution.
+For manual setup instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-## Key Features
-- **Hybrid Embedding System:** Easily switch between OpenAI and local Sentence Transformers.
-- **Semantic Retrieval:** Find relevant information based on meaning, not just keywords.
-- **Smart Citations:** Automatically links answers to specific PDF pages or URLs.
-- **Robust Fallback:** If AI chunking fails, the system safely uses sliding-window counts.
+## ✨ Key Features
 
-## Project Structure
-- `src/` - Core logic for document loading and vector storage.
-- `notebooks/` - Experimental RAG workflows.
-- `data/` - Personal library of PDFs and research materials.
-- `tests/` - Comprehensive verification suite for embeddings, loaders, and end-to-end flow.
+- **🌐 Multi-Source Ingestion:** Process PDFs, Web Pages, YouTube Transcripts, and GitHub Repos.
+- **🧠 Intelligent Chunking:** Semantic text splitting using LLMs (Llama 3.1) for better context preservation.
+- **📝 Research Notes:** Save findings directly from the chat and browse them in the dedicated viewer.
+- **📊 Operational Monitoring:** Real-time tracking of token usage, costs, and response latency via a built-in dashboard.
+- **🔗 Smart Citations:** Automatic source attribution with clickable links and page numbers.
+- **🐳 Containerized:** Ready for easy deployment with Docker and a persistent Qdrant backend.
+
+## 📁 Project Structure
+
+- `src/agents/` - The "Brain" of the assistant powered by PydanticAI.
+- `src/tools/` - Modular tools for web search, local doc research, and note-taking.
+- `src/utils/` - Core utilities for vector storage, document loading, and logging.
+- `projects/week4_monitoring_ui/` - Streamlit-based user interface.
+- `research_notes/` - Persistent storage for your research findings.
+- `docs/` - Spec documents and deployment guides.
+
+## 🛠️ Verification
+
+Run the end-to-end verification script to ensure the pipeline is healthy:
+```bash
+uv run python tests/verification/end_to_end_verification.py
+```
+
+See [docs/CORE_MODULES_SPEC.md](docs/CORE_MODULES_SPEC.md) for technical deep-dives into each module.

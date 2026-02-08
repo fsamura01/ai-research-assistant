@@ -13,8 +13,8 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Optional, for embeddings only
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
- 
-    
+    QDRANT_URL = os.getenv("QDRANT_URL") # Optional, defaults to local path
+
     # LLM Provider (groq or openai)
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
     print(f"LLM_PROVIDER: {LLM_PROVIDER}")

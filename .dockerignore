@@ -1,0 +1,18 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+.pytest_cache
+qdrant_data
+research_notes
+logs
+data
+integration_output.txt
+test_output.txt
+.qodo
+.python-version
+# uv.lock is needed for --frozen sync
+# We copy uv.lock in the Dockerfile explicitly, but including it here 
+# can sometimes help if you want a completely fresh sync inside.
+# However, usually we keep it for --frozen. Let's exclude .venv for sure.

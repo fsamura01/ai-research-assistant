@@ -34,6 +34,8 @@ class VectorStore:
         
         if in_memory:
             self.qdrant_client = QdrantClient(":memory:")
+        elif Config.QDRANT_URL:
+            self.qdrant_client = QdrantClient(url=Config.QDRANT_URL)
         else:
             self.qdrant_client = QdrantClient(path="./qdrant_data")
         
@@ -70,7 +72,7 @@ class VectorStore:
         else:
             count = self.qdrant_client.count(self.collection_name).count
             print(f"Loaded existing collection '{self.collection_name}' with {count} documents.")
-            print(f"[OK] Created collection: {self.collection_name}")
+            print(f"[OK] Loaded existing collection: {self.collection_name}")
     
     def _get_embedding(self, text: str) -> List[float]:
         """Generate embedding for a single text."""

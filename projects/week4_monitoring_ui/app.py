@@ -183,7 +183,7 @@ with st.sidebar:
         st.rerun()
 
 # --- Main Interface ---
-tab1, tab2 = st.tabs(["💻 Chat", "📊 Monitoring"])
+tab1, tab2, tab3, tab4 = st.tabs(["💻 Chat", "📊 Monitoring", "📝 Research Notes", "⚙️ Settings"])
 
 with tab1:
     st.title("AI Research Assistant")
@@ -210,7 +210,7 @@ if prompt := st.chat_input("What would you like to research?"):
             message_placeholder = st.empty()
             
             start_time = time.time()
-            with st.spinner("Agent is thinking..."):
+            with st.status("Agent is thinking...", expanded=True) as status:
                 try:
                     # Initialize dependencies
                     deps = ResearchDeps(
@@ -218,12 +218,13 @@ if prompt := st.chat_input("What would you like to research?"):
                         vector_store=vector_store
                     )
                     
-                    # Run the agent
+                    # Run the agent synchronously
+                    # Note: For real-time tool updates, we'd need to use run_async 
+                    # and handle the event stream, but st.status captures the spirit.
+                    st.write("Checking sources and analyzing...")
                     result = agent.run_sync(prompt, deps=deps)
                     full_response = result.output
                     end_time = time.time()
-                    
-                    message_placeholder.markdown(full_response)
                     
                     # Log interaction
                     tools_called = []
@@ -232,6 +233,11 @@ if prompt := st.chat_input("What would you like to research?"):
                             for part in msg.parts:
                                 if hasattr(part, 'tool_name'):
                                     tools_called.append(part.tool_name)
+                                    st.write(f"Used tool: `{part.tool_name}`")
+                    
+                    status.update(label="Research Complete!", state="complete", expanded=False)
+                    
+                    message_placeholder.markdown(full_response)
                     
                     logger.log_interaction(
                         query=prompt,
@@ -245,6 +251,7 @@ if prompt := st.chat_input("What would you like to research?"):
                     append_message("assistant", full_response)
                     st.rerun() # Ensure history renders correctly
                 except Exception as e:
+                    status.update(label="Error occurred", state="error")
                     error_msg = f"**Error:** {str(e)}"
                     message_placeholder.error(error_msg)
                     append_message("assistant", error_msg)
@@ -274,12 +281,76 @@ with tab2:
         )
         
         # Performance Charts
-        st.subheader("Cost Trend")
-        # Pre-process for chart
-        logs_df['timestamp'] = pd.to_datetime(logs_df['timestamp'])
-        st.line_chart(logs_df.set_index('timestamp')['cost'])
+        col_chart1, col_chart2 = st.columns(2)
+        with col_chart1:
+            st.subheader("Cost Trend")
+            logs_df['timestamp'] = pd.to_datetime(logs_df['timestamp'])
+            st.line_chart(logs_df.set_index('timestamp')['cost'])
         
-        st.subheader("Latency Trend")
-        st.line_chart(logs_df.set_index('timestamp')['latency'])
+        with col_chart2:
+            st.subheader("Latency Trend")
+            st.line_chart(logs_df.set_index('timestamp')['latency'])
     else:
         st.info("No logs available yet. Start chatting to see metrics!")
+
+with tab3:
+    st.title("📝 Research Notes")
+    st.caption("Browse and read saved research findings.")
+    
+    notes_dir = Path("research_notes")
+    if notes_dir.exists():
+        note_files = list(notes_dir.glob("*.md"))
+        if note_files:
+            # Sort by modification time (most recent first)
+            note_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+            
+            selected_note = st.selectbox(
+                "Select a note to view", 
+                options=[f.name for f in note_files],
+                index=0
+            )
+            
+            if selected_note:
+                note_path = notes_dir / selected_note
+                with open(note_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                st.divider()
+                st.markdown(content)
+                
+                if st.button("Delete Note", type="secondary"):
+                    note_path.unlink()
+                    st.success(f"Deleted {selected_note}")
+                    st.rerun()
+        else:
+            st.info("No research notes found. Use the agent to save findings!")
+    else:
+        st.warning("`research_notes` directory does not exist.")
+
+with tab4:
+    st.title("⚙️ System Settings")
+    st.caption("Overview of the current system configuration.")
+    
+    from src.utils.config import Config
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Model Configuration")
+        st.info(f"**LLM Provider:** `{Config.LLM_PROVIDER.upper()}`")
+        st.info(f"**Primary Model:** `{Config.GROQ_MODEL}`")
+        st.info(f"**Chunking Model:** `{Config.CHUNKING_LLM_MODEL}`")
+        
+    with col2:
+        st.subheader("Knowledge Base")
+        st.success(f"**Embedding Provider:** `{Config.EMBEDDING_PROVIDER.upper()}`")
+        st.success(f"**Embedding Model:** `{Config.EMBEDDING_MODEL}`")
+        st.success(f"**Vector Size:** `{Config.VECTOR_SIZE}`")
+    
+    st.divider()
+    st.subheader("RAG Parameters")
+    rag_col1, rag_col2, rag_col3 = st.columns(3)
+    rag_col1.metric("Chunk Size", Config.CHUNK_SIZE)
+    rag_col2.metric("Chunk Overlap", Config.CHUNK_OVERLAP)
+    rag_col3.metric("Top K Results", Config.TOP_K_RESULTS)
+    
+    st.checkbox("Use Intelligent Chunking", value=Config.USE_INTELLIGENT_CHUNKING, disabled=True)
