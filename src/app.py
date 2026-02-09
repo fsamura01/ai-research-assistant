@@ -1,19 +1,26 @@
-import streamlit as st
 import os
 import sys
 from pathlib import Path
-from datetime import datetime
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+# --- IMPORTANT: Path Configuration must stay at the very top ---
+# This ensures 'src' is findable whether running from root, from src/, or in Docker.
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+project_root = str(Path(__file__).parent.parent.absolute())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
+import time
+import pandas as pd
+import streamlit as st
+
+# Now that path is set, we can safely import from src
+from src.utils.config import Config
 from src.agents.research_agent import agent
 from src.models.schemas import ResearchDeps
 from src.utils.vector_store import VectorStore
 from src.utils.document_loader import DocumentLoader
 from src.utils.agent_logger import AgentLogger
-import time
-import pandas as pd
+
 
 # --- Configuration & Styling ---
 st.set_page_config(

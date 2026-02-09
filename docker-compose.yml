@@ -11,6 +11,7 @@ services:
       - .env
     environment:
       - QDRANT_URL=http://qdrant:6333
+      - PYTHONPATH=/app
     volumes:
       - ./data:/app/data
       - ./research_notes:/app/research_notes
