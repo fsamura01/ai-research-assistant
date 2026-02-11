@@ -24,8 +24,8 @@ graph TD
 
     subgraph "Reasoning & Interaction"
         User["👤 User"] <--> UI["Streamlit Dashboard"]
-        UI <--> RA["Research Agent<br/>(PydanticAI)"]
-        RA <--> Tools["Research Tools"]
+        UI <--> RA["Research Agent<br/>(Llama 3.1 8B)"]
+        RA <--> Tools["Research Tools<br/>(w/ Authority Filter)"]
         Tools <--> VS
         Tools <--> Search["Tavily Web Search"]
     end
@@ -41,10 +41,12 @@ graph TD
 ## ✨ Key Features
 
 - **🌐 Multi-Source Ingestion:** Seamlessly process complex document types.
+- **🛡️ Source Authority Filtering:** Control the quality of your research with a 1-10 trust scale (GitHub: 9, PDF: 7, Web: 5, YouTube: 4).
 - **🧠 Intelligent Chunking:** Semantic text splitting using LLMs (Llama 3.1) to preserve context better than fixed-size windows.
 - **📝 Research Notes:** Save findings directly from your research sessions into structured Markdown files.
 - **📊 Operational Monitoring:** Track token usage, API costs, and response latency in real-time.
 - **🔗 Smart Citations:** Automatic source attribution with clickable links and page-specific tracking.
+- **🛠️ Strict Reasoning:** High-authority mode ensures the agent only uses verified sources and avoids hallucinations/internal knowledge.
 - **🐳 Containerized:** Fully dockerized for consistent deployment across environments.
 
 ---

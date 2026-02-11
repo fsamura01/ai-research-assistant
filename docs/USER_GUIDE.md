@@ -14,11 +14,22 @@ Before you can research your documents, you need to index them.
 4. **Processing**: Click **"Index Sources"**. You'll see status updates as the system chunks and embeds your data.
 
 > [!TIP]
-> Use the sidebar's "Currently Indexed" section to verify which sources are loaded into the assistant's memory.
+> Use the sidebar's "Currently Indexed" section to verify which sources are loaded into the assistant's memory. You can also see the **Point Count** in the sidebar to monitor the database size.
 
 ---
 
-## 2. 💻 Chat & Research
+## 2. 🛡️ Source Authority Control
+
+New to this version is the **Source Authority** trust-layer.
+
+- **Slider**: Use the "Min. Source Authority" slider in the sidebar to set your trust threshold.
+- **Trust Scores**:
+    - **9 (GitHub)**: Official repositories and dev docs.
+    - **7 (Local PDF)**: Your uploaded scholarly or professional files.
+    - **5 (Web)**: Live internet results (news, blogs).
+    - **4 (YouTube)**: Unstructured transcripts.
+- **Strict Mode**: Setting the slider to 7 or above activates "Strict Mode." The agent will refuse to answer using internal knowledge and will only provide information from authorized high-trust sources.
+- **Results**: Each search result displayed in the chat will show its authority score, helping you gauge the info's reliability.
 
 Once your data is indexed, you can start asking questions.
 

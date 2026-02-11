@@ -23,9 +23,9 @@ Handles the extraction of raw content from various sources.
 
 The persistent memory of the assistant, powered by **Qdrant**.
 
-- **`add_documents(docs)`**: Processes a list of `Document` objects, applies (optional) intelligent chunking, and indexes them.
-- **`search(query, top_k=5)`**: Performs a semantic search to find relevant snippets.
-- **`get_all_sources()`**: Returns a list of all unique documents currently indexed.
+- **`add_documents(docs)`**: Processes a list of `Document` objects, applies (optional) intelligent chunking, and indexes them with a `source_authority` score.
+- **`search(query, top_k=5, min_authority=1)`**: Performs a semantic search, filtering results by the minimum required authority score.
+- **`get_all_sources()`**: Returns a list of all unique documents currently indexed, grouped by repository or source name.
 - **`clear()`**: Resets the vector database.
 
 ---
@@ -38,8 +38,8 @@ The persistent memory of the assistant, powered by **Qdrant**.
 The core agent built with **PydanticAI**.
 
 - **Architecture**: Follows the **ReAct (Reason + Act)** pattern.
-- **Logic**: Orchestrates tool calls based on user intent and retrieved context.
-- **Dependencies**: Uses `ResearchDeps` for type-safe access to API keys and storage clients.
+- **Logic**: Orchestrates tool calls based on user intent and retrieved context. Uses a **Dynamic System Prompt** to inject and enforce authority constraints.
+- **Dependencies**: Uses `ResearchDeps` which includes `min_authority` settings to bound tool execution.
 
 ---
 
@@ -49,17 +49,17 @@ Modular functions that the agent can execute during a research session.
 
 ### `research_local_docs`
 - **Purpose**: Queries the `VectorStore` for information within indexed documents.
+- **Enforcement**: Honors `min_authority` via vector filtering.
 - **Input**: `query` (string).
-- **Output**: List of relevant text chunks with source metadata.
+- **Output**: List of relevant text chunks with source metadata and authority scores.
 
 ### `perform_web_search`
 - **Purpose**: Accesses real-time data from the internet via **Tavily**.
-- **Input**: `query` (string).
-- **Output**: Curated list of search results with titles and snippets.
+- **Enforcement**: Returns "Access Denied" if `min_authority` > 5.
 
 ### `get_youtube_transcript`
 - **Purpose**: Fetches transcripts for specific videos mentioned in chat.
-- **Input**: `video_url` (string).
+- **Enforcement**: Returns "Access Denied" if `min_authority` > 4.
 
 ### `save_note`
 - **Purpose**: Persists research findings into the `research_notes/` directory.

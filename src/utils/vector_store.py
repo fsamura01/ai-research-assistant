@@ -271,10 +271,15 @@ class VectorStore:
         return total_added
     
     @logfire.instrument("vector_search", extract_args=True)
-    def search(self, query: str, top_k: int = None) -> List[Dict]:
+    def search(self, query: str, min_authority: int = None, top_k: int = None) -> List[Dict]:
         """
         Search for relevant documents
         
+        Args:
+            query: Search query
+            min_authority: Minimum source authority (1-10)
+            top_k: Number of results to return
+            
         Returns:
             List of search results with text and metadata
         """
@@ -283,10 +288,24 @@ class VectorStore:
         # Generate query embedding
         query_embedding = self._get_embedding(query)
         
+        # Prepare filter if min_authority is specified
+        query_filter = None
+        if min_authority is not None:
+            from qdrant_client import models
+            query_filter = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="source_authority",
+                        range=models.Range(gte=min_authority)
+                    )
+                ]
+            )
+
         # Search using the modern 'query_points' API
         results = self.qdrant_client.query_points(
             collection_name=self.collection_name,
             query=query_embedding,
+            query_filter=query_filter,
             limit=top_k
         ).points
         
@@ -303,9 +322,34 @@ class VectorStore:
     
     def clear(self):
         """Clear all data from collection"""
-        self.qdrant_client.delete_collection(self.collection_name)
+        print(f"🧹 Aggressively clearing collection: {self.collection_name}")
+        from qdrant_client import models
+        
+        try:
+            # 1. Delete all points first (more reliable for persistent storage)
+            from qdrant_client import models
+            import time
+            self.qdrant_client.delete(
+                collection_name=self.collection_name,
+                points_selector=models.FilterSelector(
+                    filter=models.Filter() # Empty filter matches everything
+                )
+            )
+            time.sleep(0.5) # Give filesystem a moment to sync
+            print(f"[OK] Deleted all points from: {self.collection_name}")
+            
+            # 2. Try to drop and recreate the collection as well
+            self.qdrant_client.delete_collection(self.collection_name)
+            print(f"[OK] Drop collection: {self.collection_name}")
+        except Exception as e:
+            print(f"[INFO] Clear operation message: {e}")
+        
+        # 3. Always re-initialize fresh
         self._initialize_collection()
-        print(f"[OK] Cleared collection: {self.collection_name}")
+        
+        # Final count check
+        final_count = self.qdrant_client.count(self.collection_name).count
+        print(f"[OK] Collection {self.collection_name} clear complete. Final count: {final_count}")
 
     def get_all_sources(self) -> List[Dict]:
         """
@@ -329,14 +373,16 @@ class VectorStore:
             for point in results:
                 payload = point.payload
                 s_type = payload.get("source_type")
-                s_name = payload.get("source_path") or payload.get("source_url") or payload.get("repo")
+                # Prioritize 'repo' for GitHub to group files, then 'source_path' for PDFs, then 'source_url' for Web/YouTube
+                s_name = payload.get("repo") or payload.get("source_path") or payload.get("source_url")
                 
                 if s_type and s_name:
                     key = f"{s_type}:{s_name}"
                     if key not in sources:
                         sources[key] = {
                             "source_type": s_type,
-                            "source_name": s_name
+                            "source_name": s_name,
+                            "source_authority": payload.get("source_authority", 3)
                         }
             
             return list(sources.values())

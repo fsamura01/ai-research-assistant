@@ -24,9 +24,11 @@ Responsible for extracting raw text and structured metadata from diverse sources
 
 ### Metadata Schema:
 Every document extracted contains:
-- `source_type`: (pdf | web | youtube)
+- `source_type`: (pdf | web | youtube | github)
 - `source_path` / `source_url`
+- `source_authority`: (1-10) assigned based on origin.
 - `page_number`: (Specific to PDFs)
+- `repo`: (Specific to GitHub sources)
 
 ---
 
@@ -75,11 +77,11 @@ The brain of the assistant that orchestrates tools and follows the ReAct pattern
 
 ### Agent Logic:
 - **Main Agent (`src/agents/research_agent.py`):**
-  - Powered by **PydanticAI**.
-  - **Type Validation:** Uses Pydantic models for tool arguments.
-  - **Structured Data:** Tools return complex objects (e.g., `SearchResult`).
-  - **Dependency Injection:** Uses `RunContext` for API keys and store clients.
-  - **Modular Tools:** Each tool extracted to `src/tools/` for better maintainability.
+  - Powered by **PydanticAI** and **Llama 3.1 8B**.
+  - **Dynamic System Prompt**: Injects the user's current `min_authority` constraint into every request.
+  - **Strict Enforcement**: Explicitly forbids hallucinations or using internal knowledge in "High Authority" mode.
+  - **Type Validation**: Uses Pydantic models for tool arguments.
+  - **Dependency Injection**: Uses `ResearchDeps` to pass `min_authority` and `vector_store` to tools.
 
 ---
 

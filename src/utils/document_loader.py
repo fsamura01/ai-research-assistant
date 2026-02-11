@@ -53,7 +53,8 @@ class DocumentLoader:
                             "source_type": "pdf",
                             "source_path": source_name,
                             "page_number": page_num + 1,
-                            "total_pages": len(pdf_reader.pages)
+                            "total_pages": len(pdf_reader.pages),
+                            "source_authority": 7
                         }
                     )
                     documents.append(doc)
@@ -91,7 +92,8 @@ class DocumentLoader:
                 metadata={
                     "source_type": "web",
                     "source_url": url,
-                    "title": title
+                    "title": title,
+                    "source_authority": 5
                 }
             )
         except Exception as e:
@@ -120,12 +122,26 @@ class DocumentLoader:
                 metadata={
                     "source_type": "youtube",
                     "source_url": url,
-                    "video_id": video_id
+                    "video_id": video_id,
+                    "source_authority": 4
                 }
             )
         except Exception as e:
             raise ValueError(f"Failed to load YouTube transcript: {str(e)}")
     
+    @staticmethod
+    def parse_github_url(url: str) -> Optional[Dict[str, str]]:
+        """Extract owner and repo name from a GitHub URL."""
+        # Handle variations like https://github.com/owner/repo or github.com/owner/repo
+        pattern = r"github\.com/([^/]+)/([^/]+)"
+        match = re.search(pattern, url)
+        if match:
+            return {
+                "owner": match.group(1),
+                "repo": match.group(2).replace(".git", "")
+            }
+        return None
+
     @staticmethod
     def load_github_repo(repo_owner: str, repo_name: str, branch: str = 'main') -> List[Document]:
         """
@@ -167,7 +183,8 @@ class DocumentLoader:
                             "source_type": "github",
                             "repo": f"{repo_owner}/{repo_name}",
                             "filename": filename,
-                            "source_url": f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{filename.split('/', 1)[-1]}"
+                            "source_url": f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{filename.split('/', 1)[-1]}",
+                            "source_authority": 9
                         })
                         
                         if text_content.strip():

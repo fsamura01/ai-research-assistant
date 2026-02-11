@@ -130,7 +130,11 @@ def process_ingestion(file_objs=None, url=None):
                 docs.extend(loader.load_pdf(file_obj))
         
         if url:
-            if "youtube.com" in url or "youtu.be" in url:
+            gh_info = loader.parse_github_url(url)
+            if gh_info:
+                st.write(f"Loading GitHub repository: {gh_info['owner']}/{gh_info['repo']}")
+                docs.extend(loader.load_github_repo(gh_info['owner'], gh_info['repo']))
+            elif "youtube.com" in url or "youtu.be" in url:
                 st.write(f"Loading YouTube transcript: {url}")
                 docs.append(loader.load_youtube_transcript(url))
             else:
@@ -161,23 +165,59 @@ with st.sidebar:
     
     st.divider()
     
+    st.subheader("Search Settings")
+    min_authority = st.slider(
+        "Min. Source Authority", 
+        min_value=1, 
+        max_value=10, 
+        value=1,
+        help="Filter search results by the trust level of the source."
+    )
+    
+    st.divider()
+    
     st.subheader("Currently Indexed")
+    
+    # Show point count for debugging
+    try:
+        count = vector_store.qdrant_client.count(vector_store.collection_name).count
+        st.caption(f"Points in DB: {count}")
+    except:
+        st.caption("Points in DB: 0")
+    
     if st.session_state.ingested_sources:
         for src in st.session_state.ingested_sources:
             s_type = src['source_type'].upper()
             s_name = src['source_name']
+            s_auth = src.get('source_authority', 3)
+            
             if len(s_name) > 30:
                 s_name = s_name[:27] + "..."
-            st.text(f"[{s_type}] {s_name}")
+            
+            # Using a simple color-coded authority indicator
+            auth_color = "#238636" if s_auth >= 7 else "#e3b341" if s_auth >= 4 else "#da3633"
+            st.markdown(
+                f'<span style="color:{auth_color}; font-weight:bold;">[{s_auth}]</span> {s_name} ({s_type})', 
+                unsafe_allow_html=True
+            )
     else:
         st.info("No sources indexed yet.")
         
     st.divider()
     
     if st.button("Clear Vector DB", type="secondary", use_container_width=True):
-        vector_store.clear()
-        st.session_state.ingested_sources = []
-        st.success("Vector DB cleared!")
+        with st.spinner("Clearing Database..."):
+            vector_store.clear()
+            # Wait a moment for synchronization
+            time.sleep(1)
+            # Force a refresh from the actual database state
+            st.session_state.ingested_sources = vector_store.get_all_sources()
+            st.success("Vector DB cleared!")
+            st.rerun()
+
+    if st.button("Refresh Results", type="secondary", use_container_width=True, help="Update the list from the actual database state"):
+        st.session_state.ingested_sources = vector_store.get_all_sources()
+        st.success("List refreshed!")
         st.rerun()
 
     if st.button("Clear Interaction Logs", type="secondary", use_container_width=True):
@@ -222,7 +262,8 @@ if prompt := st.chat_input("What would you like to research?"):
                     # Initialize dependencies
                     deps = ResearchDeps(
                         api_key=os.getenv("GROQ_API_KEY", "mock-key"),
-                        vector_store=vector_store
+                        vector_store=vector_store,
+                        min_authority=min_authority
                     )
                     
                     # Run the agent synchronously

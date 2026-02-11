@@ -43,41 +43,55 @@ def end_to_end_verification():
         print(f"   Loading YouTube: {yt_url}")
         docs.append(loader.load_youtube_transcript(yt_url))
 
+        # Load GitHub
+        repo_owner = "fsamura01"
+        repo_name = "task-manager-app"
+        print(f"   Loading GitHub: {repo_owner}/{repo_name}")
+        docs.extend(loader.load_github_repo(repo_owner, repo_name))
+
         # 3. Add documents
         print("3. Adding documents to store (this may take a moment)...")
         count = vstore.add_documents(docs)
         print(f"   Successfully added {count} chunks from total {len(docs)} document objects.")
 
-        # 4. Search
-        print("4. Testing Search (Query: 'What is a neural network?')...")
-        results = vstore.search("What is a neural network?", top_k=1)
+        # 4. Search Verification
+        print("\n4a. Testing Search (Query: 'What is a neural network?', Min Authority: 1)...")
+        results_ai = vstore.search("What is a neural network?", min_authority=1, top_k=1)
         
-        if results:
-            for i, match in enumerate(results, 1):
-                metadata = match['metadata']
-                source_type = metadata.get('source_type', 'unknown').upper()
-                source_name = os.path.basename(metadata.get('source_path', '')) or metadata.get('source_url', 'Web')
-                page_info = f" (Page {metadata['page_number']})" if 'page_number' in metadata else ""
-                
-                print(f"\n   RESULT {i} [Score: {match['score']:.4f}]")
-                print(f"   SOURCE: {source_type} - {source_name}{page_info}")
-                print(f"   SNIPPET: {match['text'][:200]}...")
-            
-            # Verify the top result
-            top_text = results[0]['text'].lower()
-            if "neural" in top_text or "intelligence" in top_text:
-                print("\n   [SUCCESS] Search returned relevant context.")
+        if results_ai:
+            match = results_ai[0]
+            meta = match['metadata']
+            print(f"   [RESULT] Source: {meta.get('source_type')} (Auth: {meta.get('source_authority')})")
+            print(f"   [SNIPPET] {match['text'][:150]}...")
+            if "neural" in match['text'].lower() or "intelligence" in match['text'].lower():
+                print("   [SUCCESS] Found AI info with low authority filter.")
             else:
-                print("   [FAILURE] Search returned irrelevant context.")
+                print("   [FAILURE] Did not find relevant AI info.")
         else:
-            print("   [FAILURE] No results found.")
+            print("   [FAILURE] No results for AI query.")
+
+        print("\n4b. Testing Search (Query: 'WebSocket', Min Authority: 9)...")
+        # min_authority=9 should only return GitHub
+        results_gh = vstore.search("WebSocket", min_authority=9, top_k=1)
+        
+        if results_gh:
+            match = results_gh[0]
+            meta = match['metadata']
+            print(f"   [RESULT] Source: {meta.get('source_type')} (Auth: {meta.get('source_authority')})")
+            print(f"   [SNIPPET] {match['text'][:150]}...")
+            if meta.get('source_type') == "github":
+                print("   [SUCCESS] Found high-authority GitHub info.")
+            else:
+                print(f"   [FAILURE] Found wrong source type: {meta.get('source_type')}")
+        else:
+            print("   [FAILURE] No results for GitHub-only query.")
 
         # 5. Clear store
         print("5. Testing Clear...")
         vstore.clear()
         
         # Try search again
-        post_clear_results = vstore.search("Paris", top_k=1)
+        post_clear_results = vstore.search("Paris",min_authority=9, top_k=1)
         if not post_clear_results:
             print("   [SUCCESS] Store cleared successfully.")
         else:

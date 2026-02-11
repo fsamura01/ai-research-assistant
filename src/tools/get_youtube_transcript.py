@@ -12,7 +12,17 @@ def get_youtube_transcript(ctx: RunContext[ResearchDeps], url: str) -> List[Sear
         ctx: Run context.
         url: The full YouTube URL (e.g., https://www.youtube.com/watch?v=...)
     """
-    print(f"  [YouTube Tool] Extracting transcript for: {url}")
+    print(f"  [YouTube Tool] Extracting transcript for: {url} (Limit: {ctx.deps.min_authority})")
+    
+    # Enforce authority constraint (YouTube = 4)
+    if ctx.deps.min_authority > 4:
+        print(f"  [YouTube Tool] ACCESS DENIED: Required authority {ctx.deps.min_authority} > YouTube authority 4")
+        return [SearchResult(
+            title="Access Denied",
+            url=url,
+            snippet=f"YouTube transcripts were hidden because their authority score (4) is lower than your required minimum ({ctx.deps.min_authority}).",
+            date_published=date.today()
+        )]
     
     try:
         # Extract video ID

@@ -11,8 +11,13 @@ def research_local_docs(ctx: RunContext[ResearchDeps], query: str, max_results: 
         query: The specific topic to look up in the documents.
         max_results: Number of chunks to retrieve.
     """
-    print(f"  [Retriever] Searching for: {query}")
-    raw_results = ctx.deps.vector_store.search(query, top_k=max_results)
+    print(f"  [Retriever] Searching for: {query} (Min Authority: {ctx.deps.min_authority})")
+    raw_results = ctx.deps.vector_store.search(
+        query, 
+        min_authority=ctx.deps.min_authority, 
+        top_k=max_results
+    )
+    print(f"  [Retriever] Found {len(raw_results)} results.")
     
     # Map raw vector results to our structured SearchResult model
     results = []
