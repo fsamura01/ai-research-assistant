@@ -33,11 +33,21 @@ class VectorStore:
         self.collection_name = collection_name or Config.COLLECTION_NAME
         
         if in_memory:
+            print("🏠 [VectorStore] Using In-Memory storage (Ephemeral)")
             self.qdrant_client = QdrantClient(":memory:")
         elif Config.QDRANT_URL:
-            self.qdrant_client = QdrantClient(url=Config.QDRANT_URL)
+            print(f"🌐 [VectorStore] Connecting to Qdrant Cloud: {Config.QDRANT_URL}")
+            self.qdrant_client = QdrantClient(
+                url=Config.QDRANT_URL, 
+                api_key=Config.QDRANT_API_KEY,
+                timeout=60 # Seconds for cloud stability
+            )
         else:
-            self.qdrant_client = QdrantClient(path="./qdrant_data")
+            print("📁 [VectorStore] Using Local disk storage: ./qdrant_data")
+            self.qdrant_client = QdrantClient(
+                path="./qdrant_data", 
+                timeout=Config.QDRANT_TIMEOUT if hasattr(Config, 'QDRANT_TIMEOUT') else 60
+            )
         
         self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
         
@@ -321,30 +331,17 @@ class VectorStore:
         return formatted_results
     
     def clear(self):
-        """Clear all data from collection"""
+        """Clear all data from collection by dropping and recreating it"""
         print(f"🧹 Aggressively clearing collection: {self.collection_name}")
-        from qdrant_client import models
         
         try:
-            # 1. Delete all points first (more reliable for persistent storage)
-            from qdrant_client import models
-            import time
-            self.qdrant_client.delete(
-                collection_name=self.collection_name,
-                points_selector=models.FilterSelector(
-                    filter=models.Filter() # Empty filter matches everything
-                )
-            )
-            time.sleep(0.5) # Give filesystem a moment to sync
-            print(f"[OK] Deleted all points from: {self.collection_name}")
-            
-            # 2. Try to drop and recreate the collection as well
+            # 1. Drop the collection (much faster than deleting points one by one)
             self.qdrant_client.delete_collection(self.collection_name)
             print(f"[OK] Drop collection: {self.collection_name}")
         except Exception as e:
-            print(f"[INFO] Clear operation message: {e}")
+            print(f"[INFO] Collection drop message (it might not exist): {e}")
         
-        # 3. Always re-initialize fresh
+        # 2. Re-initialize fresh
         self._initialize_collection()
         
         # Final count check

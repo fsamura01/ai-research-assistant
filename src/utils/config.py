@@ -6,17 +6,36 @@ from pathlib import Path
 # Load environment variables
 load_dotenv()
 
+def get_config(key, default=None):
+    """Get config from environment or streamlit secrets"""
+    # 1. Check OS Environment (Local/Docker)
+    val = os.getenv(key)
+    if val:
+        return val
+    
+    # 2. Check Streamlit Secrets (Cloud)
+    try:
+        import streamlit as st
+        # st.secrets behaves like a nested dict
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+        
+    return default
+
 class Config:
     """Application configuration"""
     
     # API Keys
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Optional, for embeddings only
-    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-    QDRANT_URL = os.getenv("QDRANT_URL") # Optional, defaults to local path
+    GROQ_API_KEY = get_config("GROQ_API_KEY")
+    OPENAI_API_KEY = get_config("OPENAI_API_KEY")  # Optional, for embeddings only
+    TAVILY_API_KEY = get_config("TAVILY_API_KEY")
+    QDRANT_URL = get_config("QDRANT_URL") # Optional, defaults to local path
+    QDRANT_API_KEY = get_config("QDRANT_API_KEY") # For Qdrant Cloud
 
     # LLM Provider (groq or openai)
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
+    LLM_PROVIDER = get_config("LLM_PROVIDER", "groq")
     print(f"LLM_PROVIDER: {LLM_PROVIDER}")
     
     # Groq Settings
@@ -27,7 +46,7 @@ class Config:
     # Embedding Settings
     # Options: "local" (free), "openai" (premium)
     # If using openai, make sure to set OPENAI_API_KEY in .env file as well as EMBEDDING_PROVIDER = "openai"
-    EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")
+    EMBEDDING_PROVIDER = get_config("EMBEDDING_PROVIDER", "local")
     print(f"EMBEDDING_PROVIDER: {EMBEDDING_PROVIDER}")
   
     
@@ -54,7 +73,7 @@ class Config:
     CHUNK_OVERLAP = 200
     TOP_K_RESULTS = 5
     # if USE_INTELLIGENT_CHUNKING is True, make sure to set CHUNKING_LLM_MODEL in .env file as well
-    USE_INTELLIGENT_CHUNKING = os.getenv("USE_INTELLIGENT_CHUNKING", "False").lower() == "true"
+    USE_INTELLIGENT_CHUNKING = str(get_config("USE_INTELLIGENT_CHUNKING", "False")).lower() == "true"
 
 
     print(f"USE_INTELLIGENT_CHUNKING: {USE_INTELLIGENT_CHUNKING}")
@@ -65,6 +84,9 @@ class Config:
     PROJECT_ROOT = Path(__file__).parent.parent.parent
     DATA_DIR = PROJECT_ROOT / "data"
     LOGS_DIR = PROJECT_ROOT / "logs"
+
+    # Qdrant Settings
+    QDRANT_TIMEOUT = 60
     
     @classmethod
     def validate(cls):
