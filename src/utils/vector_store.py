@@ -33,17 +33,24 @@ class VectorStore:
         self.collection_name = collection_name or Config.COLLECTION_NAME
         
         if in_memory:
-            print("🏠 [VectorStore] Using In-Memory storage (Ephemeral)")
+            print("🏠 [VectorStore] Mode: In-Memory (Ephemeral)")
             self.qdrant_client = QdrantClient(":memory:")
         elif Config.QDRANT_URL:
-            print(f"🌐 [VectorStore] Connecting to Qdrant Cloud: {Config.QDRANT_URL}")
+            # Simplified detection for logging purposes
+            is_cloud = "qdrant.tech" in Config.QDRANT_URL
+            
+            if is_cloud:
+                print(f"🌐 [VectorStore] Mode: Qdrant Cloud ({Config.QDRANT_URL})")
+            else:
+                print(f"🐳 [VectorStore] Mode: Docker/Local ({Config.QDRANT_URL})")
+                
             self.qdrant_client = QdrantClient(
                 url=Config.QDRANT_URL, 
                 api_key=Config.QDRANT_API_KEY,
-                timeout=60 # Seconds for cloud stability
+                timeout=60
             )
         else:
-            print("📁 [VectorStore] Using Local disk storage: ./qdrant_data")
+            print("📁 [VectorStore] Mode: Local Disk (./qdrant_data)")
             self.qdrant_client = QdrantClient(
                 path="./qdrant_data", 
                 timeout=Config.QDRANT_TIMEOUT if hasattr(Config, 'QDRANT_TIMEOUT') else 60
